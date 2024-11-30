@@ -1,197 +1,231 @@
 import 'package:flutter/material.dart';
-import 'order_review_page.dart'; // Import halaman OrderReview
 import 'models/product.dart';
 import 'cart.dart';
+import 'order_review_page.dart'; // Import OrderReviewPage untuk checkout
 
 class CartPage extends StatefulWidget {
-  final Cart cart;
+  final Cart cart; // Perbaiki tipe data dari Card menjadi Cart
 
-  const CartPage({Key? key, required this.cart}) : super(key: key);
+  CartPage({required this.cart}); // Gunakan kelas Cart Anda
 
   @override
   _CartPageState createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
+  // Fungsi untuk menghitung total harga
+  double calculateTotal() {
+    return widget.cart.cartItems.fold(
+      0,
+          (total, product) => total + product.price * product.quantity,
+    );
+  }
+
+  // Fungsi untuk mendapatkan kuantitas setiap produk
+  List<int> getQuantities() {
+    return widget.cart.cartItems.map((product) => product.quantity).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    double totalPrice = widget.cart.items.fold(0, (sum, item) => sum + (item.price * item.quantity)); // Hitung total harga
+    final cartItems = widget.cart.cartItems;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Keranjang', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        title: const Text(
+          'Keranjang',
+          style: TextStyle(color: Colors.black),
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Container(
+      body: cartItems.isEmpty
+          ? const Center(
+        child: Text(
+          "Keranjang kosong",
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      )
+          : Padding(
         padding: const EdgeInsets.all(16.0),
-        color: Colors.white, // Background putih
-        child: widget.cart.items.isEmpty
-            ? const Center(
-          child: Text(
-            'Keranjang kosong',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black54),
-          ),
-        )
-            : Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Produk di Keranjang',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+              'Daftar Produk',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
-                itemCount: widget.cart.items.length,
+                itemCount: cartItems.length,
                 itemBuilder: (context, index) {
-                  final product = widget.cart.items[index];
+                  final product = cartItems[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15)),
                     child: ListTile(
-                      leading: Image.asset(
-                        product.imageUrl,
-                        width: 100,  // Ukuran gambar diperbesar menjadi lebih besar
-                        height: 100, // Ukuran gambar diperbesar menjadi lebih besar
+                      contentPadding: const EdgeInsets.all(12.0),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: product.imageUrl.startsWith('http')
+                            ? Image.network(
+                          product.imageUrl,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image,
+                              size: 50),
+                        )
+                            : Image.asset(
+                          product.imageUrl,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image,
+                              size: 50),
+                        ),
                       ),
                       title: Text(
                         product.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22), // Ukuran teks lebih besar
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Row(
-                        children: [
-                          // Tombol mengurangi kuantitas
-                          IconButton(
-                            icon: const Icon(Icons.remove, color: Colors.black),
-                            onPressed: () {
-                              setState(() {
-                                _decreaseQuantity(product);
-                              });
-                            },
-                          ),
-                          Text('${product.quantity}', style: const TextStyle(fontSize: 16)), // Tampilkan kuantitas dengan ukuran lebih besar
-                          // Tombol menambah kuantitas
-                          IconButton(
-                            icon: const Icon(Icons.add, color: Colors.black),
-                            onPressed: () {
-                              setState(() {
-                                _increaseQuantity(product);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Rp ${product.price * product.quantity}',
-                            style: const TextStyle(fontSize: 18), // Ukuran teks harga lebih besar
+                            'Harga: Rp ${product.price}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
                           ),
-                          // Tombol delete dengan ikon tempat sampah
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              setState(() {
-                                _deleteProductFromCart(product); // Panggil fungsi hapus produk
-                              });
-                            },
+                          const SizedBox(height: 5),
+                          Text(
+                            'Kuantitas: ${product.quantity}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            widget.cart.removeFromCart(product);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '${product.title} dihapus dari keranjang'),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Menampilkan total harga
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total Harga:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-                Text(
-                  'Rp ${totalPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Tombol Checkout
-            _buildCheckoutButton(context, totalPrice),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Fungsi untuk menghapus produk dari keranjang tanpa mengurangi kuantitas
-  void _deleteProductFromCart(Product product) {
-    widget.cart.items.remove(product); // Hapus produk langsung dari cart
-    setState(() {}); // Perbarui UI setelah menghapus
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${product.title} dihapus dari keranjang')));
-  }
-
-  // Fungsi untuk mengurangi kuantitas
-  void _decreaseQuantity(Product product) {
-    if (product.quantity > 1) {
-      setState(() {
-        product.quantity--;
-      });
-    } else {
-      // Jika kuantitas 1, hapus dari keranjang
-      _deleteProductFromCart(product);
-    }
-  }
-
-  // Fungsi untuk menambah kuantitas
-  void _increaseQuantity(Product product) {
-    setState(() {
-      product.quantity++;
-    });
-  }
-
-  // Tombol Checkout
-  Widget _buildCheckoutButton(BuildContext context, double totalPrice) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.all(15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          backgroundColor: Colors.blueGrey,
-        ),
-        onPressed: () {
-          if (totalPrice > 0) {
-            // Navigasi ke halaman OrderReview
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OrderReviewPage(
-                  products: widget.cart.items,
-                  quantities: widget.cart.items.map((product) => product.quantity).toList(),
-                  cart: widget.cart,
-                  shouldClearCart: true, // Bersihkan keranjang setelah checkout
-                  isDirectPurchase: false, // Ini bukan pembelian langsung
-                ),
+            const SizedBox(height: 10),
+            // Bagian Total Harga dan Tombol Checkout
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            );
-          }
-        },
-        child: const Text(
-          'Checkout',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Harga',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Rp ${calculateTotal().toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding:
+                        const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Navigasi ke OrderReviewPage
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderReviewPage(
+                              products: cartItems,
+                              quantities: getQuantities(),
+                              cart: widget.cart,
+                              shouldClearCart:
+                              true, // Hapus keranjang setelah checkout
+                              isDirectPurchase:
+                              false, // Tidak langsung beli
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Checkout',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

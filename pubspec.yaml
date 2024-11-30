@@ -1,23 +1,29 @@
 name: kelompok_uts
 description: "A new Flutter project."
 
-publish_to: 'none'
+publish_to: 'none' # This prevents the package from being published publicly.
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.0
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  sqflite: ^2.4.1
+  path: ^1.9.0
+  path_provider: ^2.0.12 # Ditambahkan untuk mendukung fungsi seperti getApplicationDocumentsDirectory
   image_picker: ^0.8.7+3
+  flutter_rating_bar: ^4.0.0  # Ditambahkan untuk rating bintang
+  intl: ^0.17.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   flutter_lints: ^4.0.0
 
 flutter:
@@ -31,3 +37,14 @@ flutter:
     - assets/img_6.png
     - assets/img_7.png
     - assets/img_8.png
+    - assets/svt1.png
+    - assets/nct2.png
+    - assets/nct21.png
+    - assets/rizze3.png
+    - assets/ate1.png
+    - assets/ate2.png
+    - assets/ate3.png
+    - assets/ate4.png
+
+
+

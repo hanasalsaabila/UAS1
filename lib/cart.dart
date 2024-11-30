@@ -1,71 +1,107 @@
-import 'models/product.dart'; // Pastikan file Product diimport dengan benar
+import 'models/product.dart';
 
 class Cart {
-  final List<Product> _items = []; // Daftar produk di keranjang, ubah ke _items untuk menjaga enkapsulasi
+  final List<Product> _cartItems = [];
 
-  // Mendapatkan daftar produk di keranjang
-  List<Product> get items => _items; // Getter untuk mengakses produk di keranjang
+  // Getter untuk item keranjang
+  List<Product> get cartItems => List.unmodifiable(_cartItems); // Return unmodifiable list untuk keamanan data
 
   // Tambahkan produk ke keranjang
   void addToCart(Product product) {
-    bool productExists = false;
-    for (var item in _items) {
-      if (item.title == product.title) {
-        item.quantity += 1;  // Jika produk sudah ada, tambahkan kuantitasnya
-        productExists = true;
-        break;
-      }
-    }
-    if (!productExists) {
-      // Jika produk belum ada, tambahkan produk ke keranjang
-      _items.add(product);
+    // Cek apakah produk sudah ada di keranjang
+    final existingProduct = _cartItems.firstWhere(
+          (item) => item.id == product.id,
+      orElse: () => Product(
+        id: null,
+        title: '',
+        price: 0,
+        imageUrl: '',
+        description: '',
+        category: '',
+        quantity: 0,
+      ),
+    );
+
+    if (existingProduct.id != null) {
+      // Jika produk sudah ada, tambahkan kuantitasnya
+      existingProduct.quantity += 1;
+    } else {
+      // Jika produk belum ada, tambahkan ke keranjang dengan kuantitas awal 1
+      product.quantity = 1;
+      _cartItems.add(product);
     }
   }
 
   // Hapus produk dari keranjang
   void removeFromCart(Product product) {
-    for (var item in _items) {
-      if (item.title == product.title) {
-        if (item.quantity > 1) {
-          item.quantity -= 1;  // Kurangi jumlah jika lebih dari 1
-        } else {
-          _items.remove(item);  // Hapus produk jika jumlahnya tinggal 1
-        }
-        break;
+    _cartItems.removeWhere((item) => item.id == product.id);
+  }
+
+  // Kurangi kuantitas produk di keranjang
+  void decrementQuantity(Product product) {
+    final existingProduct = _cartItems.firstWhere(
+          (item) => item.id == product.id,
+      orElse: () => Product(
+        id: null,
+        title: '',
+        price: 0,
+        imageUrl: '',
+        description: '',
+        category: '',
+        quantity: 0,
+      ),
+    );
+
+    if (existingProduct.id != null) {
+      if (existingProduct.quantity > 1) {
+        existingProduct.quantity -= 1;
+      } else {
+        // Jika kuantitas mencapai 0, hapus produk dari keranjang
+        removeFromCart(product);
       }
     }
   }
 
-  // Hapus semua produk dari keranjang (reset)
+  // Kosongkan keranjang
   void clearCart() {
-    _items.clear();  // Kosongkan keranjang
+    _cartItems.clear();
   }
 
-  // Mendapatkan total harga semua item di keranjang
-  int get totalPrice {
-    int total = 0;
-    for (var item in _items) {
-      total += item.price * item.quantity;  // Kalkulasi total harga
+  // Hitung total harga dari semua item di keranjang
+  double getTotalAmount() {
+    return _cartItems.fold(
+      0.0,
+          (total, item) => total + (item.price * item.quantity),
+    );
+  }
+
+  // Hitung jumlah total item di keranjang
+  int getTotalItems() {
+    return _cartItems.fold(0, (total, item) => total + item.quantity);
+  }
+
+  // Perbarui kuantitas produk
+  void updateQuantity(Product product, int newQuantity) {
+    final existingProduct = _cartItems.firstWhere(
+          (item) => item.id == product.id,
+      orElse: () => Product(
+        id: null,
+        title: '',
+        price: 0,
+        imageUrl: '',
+        description: '',
+        category: '',
+        quantity: 0,
+      ),
+    );
+
+    if (existingProduct.id != null) {
+      if (newQuantity > 0) {
+        existingProduct.quantity = newQuantity;
+      } else {
+        // Jika kuantitas mencapai 0, hapus produk dari keranjang
+        removeFromCart(product);
+      }
     }
-    return total;
-  }
-
-  // Mendapatkan jumlah total item yang berbeda di keranjang
-  int get itemCount {
-    int totalItems = 0;
-    for (var item in _items) {
-      totalItems += item.quantity;  // Kalkulasi jumlah item
-    }
-    return totalItems;
-  }
-
-  // Mendapatkan total item jenis yang berbeda
-  int get productCount {
-    return _items.length;
-  }
-
-  // Cek apakah keranjang kosong
-  bool get isEmpty {
-    return _items.isEmpty;
   }
 }

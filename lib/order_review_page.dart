@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'models/product.dart';
-import 'payment_success_page.dart'; // Pastikan PaymentSuccessPage diimpor dengan benar
-import 'cart.dart'; // Import class Cart
+import 'payment_success_page.dart';
+import 'cart.dart';
+import 'order_history.dart';
 
 class OrderReviewPage extends StatefulWidget {
   final List<Product> products;
@@ -25,7 +26,8 @@ class OrderReviewPage extends StatefulWidget {
 
 class _OrderReviewPageState extends State<OrderReviewPage> {
   String _selectedPaymentMethod = 'Master Card';
-  String _shippingAddress = 'Taimoor Sikander, +923329121290, Muhallah Usman a bad, Chakwal, Punjab 48800, Pakistan';
+  String _shippingAddress =
+      'Taimoor Sikander, +923329121290, Muhallah Usman a bad, Chakwal, Punjab 48800, Pakistan';
 
   final List<String> _paymentMethods = ['Master Card', 'BCA', 'BNI', 'SPAY', 'OVO', 'MANDIRI'];
   final List<String> _addresses = [
@@ -75,14 +77,14 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(12.0), // Tambah padding agar lebih lebar
+                    contentPadding: const EdgeInsets.all(12.0),
                     leading: Hero(
                       tag: product.title,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
                           product.imageUrl,
-                          width: 80,  // Perbesar ukuran gambar
+                          width: 80,
                           height: 80,
                           fit: BoxFit.cover,
                         ),
@@ -92,7 +94,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
                       product.title,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 20, // Perbesar ukuran teks produk
+                        fontSize: 20,
                       ),
                     ),
                     subtitle: Text(
@@ -102,7 +104,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
                     trailing: Text(
                       'Rp ${(product.price * quantity).toStringAsFixed(0)}',
                       style: const TextStyle(
-                        fontSize: 18,  // Perbesar ukuran teks harga
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -172,14 +174,30 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
           'Payment Method',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        ListTile(
-          leading: const Icon(Icons.credit_card, color: Colors.blueAccent),
-          title: Text(_selectedPaymentMethod, style: const TextStyle(fontSize: 16)),
-          trailing: TextButton(
-            onPressed: () {
-              _selectPaymentMethod(context);
-            },
-            child: const Text('Change'),
+        GestureDetector(
+          onTap: () => _selectPaymentMethod(context),
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.credit_card, color: Colors.blueAccent, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _selectedPaymentMethod,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const Icon(Icons.edit, color: Colors.grey),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -194,14 +212,30 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
           'Shipping Address',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        ListTile(
-          leading: const Icon(Icons.location_on, color: Colors.redAccent),
-          title: Text(_shippingAddress, style: const TextStyle(fontSize: 16)),
-          trailing: TextButton(
-            onPressed: () {
-              _selectShippingAddress(context);
-            },
-            child: const Text('Change'),
+        GestureDetector(
+          onTap: () => _selectShippingAddress(context),
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 10.0),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.redAccent, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _shippingAddress,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const Icon(Icons.edit, color: Colors.grey),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -224,6 +258,9 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
               builder: (context) => PaymentSuccessPage(
                 cart: widget.cart,
                 shouldClearCart: widget.shouldClearCart,
+                products: widget.products,
+                quantities: widget.quantities,
+                totalAmount: total,
               ),
             ),
           );
@@ -231,7 +268,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
         child: Text(
           'Checkout Rp ${total.toStringAsFixed(0)}',
           style: const TextStyle(
-            fontSize: 20, // Perbesar ukuran teks tombol
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -240,7 +277,6 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
     );
   }
 
-  // Fungsi untuk menghitung subtotal
   double _calculateSubtotal() {
     double subtotal = 0.0;
     for (int i = 0; i < widget.products.length; i++) {
@@ -249,25 +285,59 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
     return subtotal;
   }
 
-  // Fungsi untuk memilih metode pembayaran
   void _selectPaymentMethod(BuildContext context) async {
-    final selectedMethod = await showDialog<String>(
+    final selectedMethod = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Payment Method'),
-          content: Column(
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: _paymentMethods.map((String method) {
-              return RadioListTile<String>(
-                title: Text(method),
-                value: method,
-                groupValue: _selectedPaymentMethod,
-                onChanged: (String? value) {
-                  Navigator.pop(context, value);
-                },
-              );
-            }).toList(),
+            children: [
+              const Text(
+                'Select Payment Method',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ..._paymentMethods.map((String method) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context, method);
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.credit_card, color: Colors.blueAccent, size: 28),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              method,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          if (_selectedPaymentMethod == method)
+                            const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
           ),
         );
       },
@@ -280,25 +350,59 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
     }
   }
 
-  // Fungsi untuk memilih alamat pengiriman
   void _selectShippingAddress(BuildContext context) async {
-    final selectedAddress = await showDialog<String>(
+    final selectedAddress = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Shipping Address'),
-          content: Column(
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: _addresses.map((String address) {
-              return RadioListTile<String>(
-                title: Text(address),
-                value: address,
-                groupValue: _shippingAddress,
-                onChanged: (String? value) {
-                  Navigator.pop(context, value);
-                },
-              );
-            }).toList(),
+            children: [
+              const Text(
+                'Select Shipping Address',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ..._addresses.map((String address) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context, address);
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.redAccent, size: 28),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              address,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          if (_shippingAddress == address)
+                            const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
           ),
         );
       },
