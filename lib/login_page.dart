@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'cart.dart';
+import 'database_helper.dart'; // Import helper
 
 class LoginPage extends StatefulWidget {
   final Cart cart;
@@ -15,36 +16,83 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  bool _isLoginMode = true; // Untuk menentukan mode Login atau Registrasi
   bool _isLoading = false;
 
-  // Fungsi untuk validasi username dan password
-  void _login() {
+  // Fungsi untuk validasi username dan password saat login
+  void _login() async {
     setState(() {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isLoading = false;
-      });
+    // Ambil username dan password dari controller
+    final username = _usernameController.text;
+    final password = _passwordController.text;
 
-      if (_usernameController.text == 'usermanies' &&
-          _passwordController.text == 'hehe') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(cart: widget.cart),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Username atau password salah!'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // Cek ke database apakah username dan password valid
+    bool isValidUser = await DatabaseHelper().validateUser(username, password);
+
+    setState(() {
+      _isLoading = false;
     });
+
+    if (isValidUser) {
+      // Jika valid, navigasi ke halaman HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(cart: widget.cart),
+        ),
+      );
+    } else {
+      // Jika tidak valid, tampilkan pesan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username atau password salah!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Fungsi untuk registrasi pengguna baru
+  void _register() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Ambil username dan password dari controller
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+
+    // Simpan user baru ke database
+    bool isRegistered = await DatabaseHelper().registerUser(username, password);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (isRegistered) {
+      // Jika registrasi berhasil
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registrasi berhasil, silakan login'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Beralih ke mode login setelah registrasi berhasil
+      setState(() {
+        _isLoginMode = true;
+      });
+    } else {
+      // Jika gagal, tampilkan pesan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username sudah terdaftar atau terjadi kesalahan!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -105,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
+                  onPressed: _isLoading ? null : (_isLoginMode ? _login : _register),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -117,12 +165,30 @@ class _LoginPageState extends State<LoginPage> {
                       ? const CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   )
-                      : const Text(
-                    'Login',
-                    style: TextStyle(
+                      : Text(
+                    _isLoginMode ? 'Login' : 'Daftar',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLoginMode = !_isLoginMode; // Beralih mode antara Login dan Registrasi
+                    });
+                  },
+                  child: Text(
+                    _isLoginMode
+                        ? 'Belum punya akun? Daftar di sini'
+                        : 'Sudah punya akun? Login di sini',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ),

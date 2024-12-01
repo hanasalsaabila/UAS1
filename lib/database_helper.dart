@@ -47,6 +47,14 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
+    CREATE TABLE users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL,
+      password TEXT NOT NULL
+    )
+  ''');
+
+    await db.execute('''
       CREATE TABLE ratings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
@@ -240,6 +248,43 @@ class DatabaseHelper {
     } catch (e) {
       print("Error saat menghapus database lama: $e");
     }
+  }
+
+  // Fungsi untuk registrasi pengguna baru
+  Future<bool> registerUser(String username, String password) async {
+    final db = await database;
+
+    // Cek apakah username sudah ada
+    final List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'username = ?',
+      whereArgs: [username],
+    );
+
+    if (result.isEmpty) {
+      // Tambahkan pengguna baru
+      await db.insert('users', {
+        'username': username,
+        'password': password,
+      });
+      return true; // Registrasi berhasil
+    }
+
+    return false; // Username sudah terdaftar
+  }
+
+  // Fungsi untuk validasi login
+  Future<bool> validateUser(String username, String password) async {
+    final db = await database;
+
+    // Cek apakah ada pengguna dengan username dan password yang sesuai
+    final List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username, password],
+    );
+
+    return result.isNotEmpty; // Jika ada data, login berhasil
   }
 
   // Fungsi untuk rating
